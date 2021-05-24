@@ -1,8 +1,8 @@
-import os
 import json
-from datetime import date, datetime, timedelta
+import os
 import sys
-from typing import List
+from datetime import date, datetime, timedelta
+from typing import Dict, List
 
 import boto3
 import requests
@@ -59,7 +59,7 @@ TIME_INTERVAL = 4
 TODAY = date.today()
 
 
-def date_from_interval(interval):
+def date_from_interval(interval: int) -> date:
     today = date.today()
     return today - timedelta(weeks=interval)
 
@@ -72,7 +72,7 @@ def days_ago(count: int) -> str:
     return f"{count} {suffix} ago"
 
 
-def issue_repo(repository_url):
+def issue_repo(repository_url: str) -> str:
     return repository_url.split("/")[-1]
 
 
@@ -95,11 +95,11 @@ def pr_is_approved(base_url: str, repo: str, pr_id: int, org: str = "aws-amplify
     return is_approved
 
 
-def pr_id(pr_link):
+def pr_id(pr_link: str) -> str:
     return pr_link.split("/")[-1]
 
 
-def get_issues(ENDPOINT: str = "/search/issues") -> List[dict]:
+def get_issues(endpoint: str = "/search/issues") -> List[dict]:
 
     issues = []
     per_page = 100
@@ -113,7 +113,7 @@ def get_issues(ENDPOINT: str = "/search/issues") -> List[dict]:
     params = {"q": f"org:aws-amplify is:open {filters} {created_at}",
               "per_page": per_page, "page": page}
 
-    req = requests.get(GITHUB_BASE_URL + ENDPOINT,
+    req = requests.get(GITHUB_BASE_URL + endpoint,
                        headers=HEADERS, params=params)
 
     total_count = req.json()["total_count"]
@@ -128,7 +128,7 @@ def get_issues(ENDPOINT: str = "/search/issues") -> List[dict]:
         while len(issues) < cap:
 
             params["page"] = params.get("page", 0) + 1
-            req = requests.get(GITHUB_BASE_URL + ENDPOINT,
+            req = requests.get(GITHUB_BASE_URL + endpoint,
                                headers=HEADERS, params=params)
 
             if req.json()["items"]:
@@ -144,13 +144,13 @@ def get_issues(ENDPOINT: str = "/search/issues") -> List[dict]:
     return issues
 
 
-def truncate_item(item, max_length):
+def truncate_item(item: str, max_length: int) -> str:
     if len(item) > max_length:
         return item[:(max_length - 2)] + ".."
     return item
 
 
-def get_issue_assignee(issue):
+def get_issue_assignee(issue: Dict) -> str:
     assignees = issue.get("assignees", None)
     if assignees:
         return",".join([member["login"] for member in assignees])
@@ -162,12 +162,12 @@ def get_issue_assignee(issue):
     return "unassigned"
 
 
-def days_since(issue_date):
+def days_since(issue_date: str) -> int:
     today = date.today()
     return (today - datetime.fromisoformat(issue_date[:-1]).date()).days
 
 
-def get_issue_labels(issue):
+def get_issue_labels(issue: Dict) -> str:
     labels = issue.get("labels", None)
     if labels:
         return ", ".join([label["name"] for label in labels])
@@ -175,13 +175,13 @@ def get_issue_labels(issue):
     return ""
 
 
-def is_pr(issue):
+def is_pr(issue: Dict) -> bool:
     if issue.get("pull_request", None):
         return True
     return False
 
 
-def format_issue(issue):
+def format_issue(issue: Dict) -> Dict:
     pr = is_pr(issue)
     id = pr_id(issue["url"])
     repo = issue_repo(issue['repository_url'])
@@ -207,7 +207,7 @@ def format_issue(issue):
     }
 
 
-def pr_alerts(issue):
+def pr_alerts(issue: Dict) -> str:
     # within last 24hrs, follow up and action
     # FIRST_TIME_CONTRIBUTOR
     # PR has less than 2 comments
@@ -226,7 +226,7 @@ def pr_alerts(issue):
     return f"{time}{unassigned}{comments}{action}"
 
 
-def issue_alerts(issue):
+def issue_alerts(issue: Dict) -> str:
     action = ""
     unassigned = "👤" if issue["assignee"] == "unassigned" else ""
     comments = "🔴" if issue['comments'] == 0 else ""
@@ -238,7 +238,7 @@ def issue_alerts(issue):
     return f"{time}{unassigned}{comments}{action}"
 
 
-def format_by_repo(issues):
+def format_by_repo(issues: List[Dict]) -> Dict[str, str]:
     MSG_MAX_LENGTH = 40000
 
     sorted_issues_by_assignee = sorted(
@@ -272,7 +272,7 @@ def format_by_repo(issues):
     }
 
 
-def create_status_reports():
+def create_status_reports() -> None:
     repo_ids = [repo["repo"] for repo in repos]
 
     repo_count = len(repo_ids)
@@ -336,6 +336,7 @@ def create_status_reports():
 
 
 def handler(event, context):
+    logging.info(f"run mode: production")
     create_status_reports()
 
 
