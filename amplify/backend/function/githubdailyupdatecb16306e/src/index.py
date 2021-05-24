@@ -60,20 +60,33 @@ TODAY = date.today()
 
 
 def date_from_interval(interval: int) -> date:
+    """Historical date based looking back week interval
+
+    Args:
+        interval (int): number of weeks to look back
+
+    Returns:
+        date: today less week interval(s)
+    """
+
     today = date.today()
     return today - timedelta(weeks=interval)
 
 
 def days_ago(count: int) -> str:
+    """Humanize date count
+
+    Args:
+        count (int): number of days
+
+    Returns:
+        str: human-friendly representation
+    """
     if count == 0:
         return "today"
 
     suffix = "day" if count == 1 else "days"
     return f"{count} {suffix} ago"
-
-
-def issue_repo(repository_url: str) -> str:
-    return repository_url.split("/")[-1]
 
 
 # def get_rate_limit(ENDPOINT="/rate_limit") -> List[dict]:
@@ -82,6 +95,17 @@ def issue_repo(repository_url: str) -> str:
 #         return req.json()
 
 def pr_is_approved(base_url: str, repo: str, pr_id: int, org: str = "aws-amplify") -> bool:
+    """Determine if PR is awaiting approval or not
+
+    Args:
+        base_url (str): GH API URL
+        repo (str): repository ID
+        pr_id (int): ID
+        org (str, optional): Defaults to "aws-amplify".
+
+    Returns:
+        bool: is PR approved
+    """
     pr_url = f"{base_url}/repos/{org}/{repo}/pulls/{pr_id}/reviews"
 
     req = requests.get(pr_url, headers=HEADERS)
@@ -93,6 +117,10 @@ def pr_is_approved(base_url: str, repo: str, pr_id: int, org: str = "aws-amplify
             break
 
     return is_approved
+
+
+def issue_repo(repository_url: str) -> str:
+    return repository_url.split("/")[-1]
 
 
 def pr_id(pr_link: str) -> str:
@@ -151,6 +179,15 @@ def truncate_item(item: str, max_length: int) -> str:
 
 
 def get_issue_assignee(issue: Dict) -> str:
+    """Determine the GH issue assignees
+
+    Args:
+        issue (Dict): a GitHub issue from the REST API 
+
+    Returns:
+        str: one, or more, assignees in comma sep str
+    """
+
     assignees = issue.get("assignees", None)
     if assignees:
         return",".join([member["login"] for member in assignees])
@@ -176,12 +213,29 @@ def get_issue_labels(issue: Dict) -> str:
 
 
 def is_pr(issue: Dict) -> bool:
+    """Determine if GH issue is PR
+
+    Args:
+        issue (Dict): GH issue
+
+    Returns:
+        bool: is PR or issue
+    """
+
     if issue.get("pull_request", None):
         return True
     return False
 
 
 def format_issue(issue: Dict) -> Dict:
+    """Format GH to
+
+    Args:
+        issue (Dict): GH issue
+
+    Returns:
+        Dict: Consolidated issue 
+    """
     pr = is_pr(issue)
     id = pr_id(issue["url"])
     repo = issue_repo(issue['repository_url'])
@@ -208,6 +262,14 @@ def format_issue(issue: Dict) -> Dict:
 
 
 def pr_alerts(issue: Dict) -> str:
+    """Apply light business logic to GH PR
+
+    Args:
+        issue (Dict): GH issue
+
+    Returns:
+        str: Concatenated string of alert idicators
+    """
     # within last 24hrs, follow up and action
     # FIRST_TIME_CONTRIBUTOR
     # PR has less than 2 comments
@@ -227,6 +289,14 @@ def pr_alerts(issue: Dict) -> str:
 
 
 def issue_alerts(issue: Dict) -> str:
+    """Apply light business logic to GH issue
+
+    Args:
+        issue (Dict): GH issue
+
+    Returns:
+        str: Concatenated string of alert idicators
+    """
     action = ""
     unassigned = "👤" if issue["assignee"] == "unassigned" else ""
     comments = "🔴" if issue['comments'] == 0 else ""
