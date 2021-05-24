@@ -1,0 +1,5 @@
+{
+    "tableName": "Repo",
+    "partitionKeyName": "id",
+    "partitionKeyType": "S"
+}
