@@ -91,10 +91,15 @@ else:
 
 
 def get_team_members(id):
+    # https://docs.github.com/en/rest/reference/teams#list-team-members
     headers = {"Accept": "application/vnd.github.v3+json",
                "Authorization": "token " + TOKEN
                }
-    req = requests.get(GH_API_TEAM_URL.format(id), headers=headers)
+
+    params = {"per_page": 100}
+
+    req = requests.get(GH_API_TEAM_URL.format(id),
+                       headers=headers, params=params)
 
     if req.status_code == requests.codes.ok:
         now = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
