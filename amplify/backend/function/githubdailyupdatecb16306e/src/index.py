@@ -138,6 +138,7 @@ def get_issues(endpoint: str = "/search/issues") -> List[dict]:
 
     filters = (" ").join([f"-label:{label}" for label in FILTER_LABELS])
 
+    # TODO: only is:pr
     params = {"q": f"org:aws-amplify is:open {filters} {created_at}",
               "per_page": per_page, "page": page}
 
@@ -314,11 +315,12 @@ def format_by_repo(issues: List[Dict]) -> Dict[str, str]:
     sorted_issues_by_assignee = sorted(
         issues, key=lambda k: (k['assignee'], k['is_pr']))
 
-    issues_txt = ""
+    # issues_txt = ""
     prs_txt = ""
 
     for issue in sorted_issues_by_assignee:
-        status_length = len(prs_txt + issues_txt)
+        status_length = len(prs_txt)
+        # status_length = len(prs_txt + issues_txt)
         labels = f"({issue['labels']})" if issue['labels'] else ""
 
         if issue["is_pr"]:
@@ -328,17 +330,17 @@ def format_by_repo(issues: List[Dict]) -> Dict[str, str]:
                 break
             else:
                 prs_txt += pr
-        else:
-            issue_rec = f"---\n{issue_alerts(issue)} [{issue['assignee']}] {issue['title']}\n{issue['comments']} comments, created: {days_ago(issue['open_since'])}, updated: {days_ago(issue['last_updated'])} {labels}\n{issue['link']}\n\n"
-            if (len(issue_rec) + status_length) > MSG_MAX_LENGTH:
-                # indicate truncate
-                break
-            else:
-                issues_txt += issue_rec
+        # else:
+        #     issue_rec = f"---\n{issue_alerts(issue)} [{issue['assignee']}] {issue['title']}\n{issue['comments']} comments, created: {days_ago(issue['open_since'])}, updated: {days_ago(issue['last_updated'])} {labels}\n{issue['link']}\n\n"
+        #     if (len(issue_rec) + status_length) > MSG_MAX_LENGTH:
+        #         # indicate truncate
+        #         break
+        #     else:
+        #         issues_txt += issue_rec
 
     return {
-        "prs": prs_txt,
-        "issues": issues_txt
+        "prs": prs_txt
+        # "issues": issues_txt
     }
 
 
