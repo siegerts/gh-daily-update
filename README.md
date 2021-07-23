@@ -9,3 +9,16 @@ Scheduled function runs to:
 Functions:
 - githubdailyupdate
 - githubdailyupdateteammembers
+
+
+### Local testing
+
+update `.env` with 
+
+
+Python virtual environment
+
+cd into the function directory, respectively
+
+activate the virtual environment with `pipenv shell`
+
