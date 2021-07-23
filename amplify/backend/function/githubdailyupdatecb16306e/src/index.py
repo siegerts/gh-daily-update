@@ -55,7 +55,8 @@ HEADERS = {"Accept": "application/vnd.github.v3+json",
 FILTER_LABELS = set(["feature-request", "enhancement",
                      "bug", "pending-close-response-required"])
 
-TIME_INTERVAL = 4
+# increase to 16 weeks...7/24/2021
+TIME_INTERVAL = 16
 TODAY = date.today()
 
 
@@ -106,6 +107,7 @@ def pr_is_approved(base_url: str, repo: str, pr_id: int, org: str = "aws-amplify
     Returns:
         bool: is PR approved
     """
+    # ~5000 req/min rate limit
     pr_url = f"{base_url}/repos/{org}/{repo}/pulls/{pr_id}/reviews"
 
     req = requests.get(pr_url, headers=HEADERS)
@@ -138,8 +140,8 @@ def get_issues(endpoint: str = "/search/issues") -> List[dict]:
 
     filters = (" ").join([f"-label:{label}" for label in FILTER_LABELS])
 
-    # TODO: only is:pr
-    params = {"q": f"org:aws-amplify is:open {filters} {created_at}",
+    # added is:pr 7/24/2021
+    params = {"q": f"org:aws-amplify is:pr is:open {filters} {created_at}",
               "per_page": per_page, "page": page}
 
     req = requests.get(GITHUB_BASE_URL + endpoint,
@@ -315,6 +317,7 @@ def format_by_repo(issues: List[Dict]) -> Dict[str, str]:
     sorted_issues_by_assignee = sorted(
         issues, key=lambda k: (k['assignee'], k['is_pr']))
 
+    # NOTE: enable for issue report 7/24/2021
     # issues_txt = ""
     prs_txt = ""
 
@@ -330,6 +333,8 @@ def format_by_repo(issues: List[Dict]) -> Dict[str, str]:
                 break
             else:
                 prs_txt += pr
+        
+        # NOTE: enable for issue report 7/24/2021   
         # else:
         #     issue_rec = f"---\n{issue_alerts(issue)} [{issue['assignee']}] {issue['title']}\n{issue['comments']} comments, created: {days_ago(issue['open_since'])}, updated: {days_ago(issue['last_updated'])} {labels}\n{issue['link']}\n\n"
         #     if (len(issue_rec) + status_length) > MSG_MAX_LENGTH:
@@ -386,6 +391,8 @@ def create_status_reports() -> None:
 
     for repo_id in repo_ids:
         issues = filtered_issues[repo_id]
+
+        # NOTE: only contains prs 7/24/2021 
         if issues:
             status.append({
                 **{"repo": name_by_repo[repo_id]},
@@ -393,7 +400,7 @@ def create_status_reports() -> None:
                 **meta,
                 **format_by_repo(issues)
             })
-
+    
     logging.info(f"{len(status)} reports to send.")
 
     for item in status:
